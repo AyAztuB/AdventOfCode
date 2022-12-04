@@ -1,5 +1,7 @@
 from os import system
 
+system("aoc d -d 1 -y 2021 -I -i input.txt -o")
+
 def submit(answer, part):
     system(f"echo {answer} && aoc s {part} {answer} -y 2021 -d 1")
 
