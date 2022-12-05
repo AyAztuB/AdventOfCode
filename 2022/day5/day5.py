@@ -2,9 +2,9 @@ import os
 
 os.system("aoc d -d 5 -y 2022 -I -i input.txt -o")
 
-def submition(answer):
+def submition(answer, part):
     print(answer)
-    os.system(f"aoc s 1 {answer} -d 5 -y 2022")
+    os.system(f"aoc s {part} {answer} -d 5 -y 2022")
 
 def load_data():
     res = []
@@ -57,11 +57,11 @@ def __assembly(popall):
 def part1():
     return __assembly(False)
 
-submition(part1())
+submition(part1(), 1)
 
 def part2():
     return __assembly(True)
 
-submition(part2())
+submition(part2(), 2)
 
 
