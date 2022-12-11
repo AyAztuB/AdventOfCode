@@ -25,30 +25,12 @@ def __advance(H, T):
         Col = H[1]-1 if T[1]<H[1] else H[1]+1
     return (Row, Col)
 
-def part1():
-    data = load_data()
-    H = (0,0)
-    T = (0,0)
-    answer = {T}
-    # movments in (row, col)
-    directions = {'L': (0,-1), 'U': (-1,0), 'R': (0,1), 'D': (1,0)}
-    for l in data:
-        (direction, amount) = l.split()
-        amount = int(amount)
-        dir_tuple = directions[direction]
-        for _ in range(amount):
-            H = (H[0] + dir_tuple[0], H[1] + dir_tuple[1])
-            T = __advance(H, T)
-            answer.add(T)
-    return len(answer)
-
-submition(part1(), 1)
-
-def part2():
+def __challenge():
     data = load_data()
     H = (0,0)
     T = [(0,0) for _ in range(9)]
-    answer = {T[8]}
+    answer1 = {T[0]}
+    answer2 = {T[8]}
     # movments in (row, col)
     directions = {'L': (0,-1), 'U': (-1,0), 'R': (0,1), 'D': (1,0)}
     for l in data:
@@ -60,8 +42,17 @@ def part2():
             T[0] = __advance(H, T[0])
             for i in range(8):
                 T[i+1] = __advance(T[i], T[i+1])
-            answer.add(T[8])
-    return len(answer)
+            answer1.add(T[0])
+            answer2.add(T[8])
+    return len(answer1), len(answer2)
+
+def part1():
+    return __challenge()[0]
+
+submition(part1(), 1)
+
+def part2():
+    return __challenge()[1]
 
 submition(part2(), 2)
 
