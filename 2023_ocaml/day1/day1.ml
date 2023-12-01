@@ -50,5 +50,4 @@ let () =
     let f = open_in file in
     let res = solve f in
     close_in f;
-    print_endline (Format.sprintf "part1: %d" (fst res));
-    print_endline (Format.sprintf "part2: %d" (snd res))
+    print_endline (Format.sprintf "part1: %d\npart2: %d" (fst res) (snd res))
