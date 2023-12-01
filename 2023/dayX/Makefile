@@ -4,11 +4,12 @@ CFLAGS=-Wall -Wextra -Werror -Wvla -pedantic -std=c99
 LDFLAGS=
 LDLIBS=
 
-OBJ=day1.o
-BIN=day1
+SRC=$(shell find -name "*.c")
+OBJ=$(SRC:.c=.o)
+BIN=$(OBJ:.o=)
 
 all: $(BIN)
-	./$(BIN)
+	$(BIN)
 
 $(BIN): $(OBJ)
 
