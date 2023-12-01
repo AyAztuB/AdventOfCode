@@ -1,0 +1,8 @@
+*.o
+*.out
+*.a
+*.so
+*.swp
+*.*cache*
+*.json
+*.d
