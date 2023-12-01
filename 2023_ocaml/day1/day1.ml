@@ -1,121 +1,54 @@
-let str_to_list str =
-  List.init (String.length str) (String.get str)
-;;
+let file = "input"
 
-let get_lines in_fd =
-  let rec get_line output = 
-    try
-      let line = input_line in_fd in
-      let line_list = str_to_list line in
-      get_line (line_list :: output)
-    with e ->
-      match e with
-        End_of_file -> List.rev output
-        | _ -> raise e
-  in get_line []
-;;
+let is_digit str i step =
+    match str.[i] with '0'..'9' -> int_of_char str.[i] - int_of_char '0' | _ -> -1
 
-(* To test and debug *)
-let print_all_lines lines =
-  let rec print_one_line l =
-    match l with
-      e::q -> let rec print_my_line _l =
-                match _l with
-                  a::b -> print_char a; print_my_line b
-                  | _ -> print_endline ""
-              in print_my_line e;
-              print_one_line q
-      | _ -> ()
-  in print_one_line lines
-;;
+let list_of_num = ["one"; "two"; "three"; "four"; "five"; "six"; "seven"; "eight"; "nine"]
 
-let is_digit s =
-  if s >= '0' && s <= '9'
-    then (int_of_char s) - (int_of_char '0')
-  else -1
-;;
+let is_sub str i step num =
+    let start = match step with -1 -> (String.length num) -1 | _ -> 0 in
+    let rec _is_eq k_str k_num =
+        if k_num >= String.length num || k_num < 0 then true
+        else if  k_str < 0 || k_str >= String.length str then false
+        else
+        if str.[k_str] = num.[k_num] then _is_eq (k_str + step) (k_num + step)
+        else false
+    in _is_eq i start
 
-let get_number line =
-  let rec get_digit l =
-    match l with
-      e::q -> let n = (is_digit e) in
-              if n >= 0
-                then n
-              else (get_digit q)
-      | _ -> -1
-  in let f1 = get_digit line in
-  let f2 = get_digit (List.rev line) in
-  f1 * 10 + f2
-;;
+let is_digit_with_str str i step =
+    let basic = is_digit str i step in
+    if basic >= 0 then basic
+    else
+    let rec _check nums res =
+        match nums with
+        e::q -> if is_sub str i step e then res + 1
+                else _check q (res + 1)
+        | _-> -1
+    in _check list_of_num 0
 
-let part1 all_lines =
-  let rec compute line result =
-    match line with
-      e::q -> compute q (result + get_number e)
-      | [] -> result
-  in let res = compute all_lines 0 in
-  print_string "part1: ";
-  print_int res;
-  print_endline ""
-;;
+let get_digit str start step is_digit_fun =
+    (* assuming there is at least one digit => no need to check if 'i' overflow *)
+    let rec _get_digit i =
+        let n = is_digit_fun str i step in
+        if n >= 0 then n
+        else _get_digit (i + step)
+    in _get_digit start
 
-let list_of_numbers = [ "one"; "two"; "three"; "four"; "five"; "six"; "seven"; "eight"; "nine" ];;
-let build_list_of_num l =
-  let rec build_rec _l res =
-    match _l with
-      e::q -> build_rec q ((str_to_list e)::res)
-      | _ -> res
-  in build_rec l []
-;;
-let list_of_num = List.rev (build_list_of_num list_of_numbers);;
+let get_number str is_digit_fun =
+    let first = get_digit str 0 1 is_digit_fun in
+    let last = get_digit str ((String.length str) - 1) (-1) is_digit_fun in
+    first * 10 + last
 
-let is_equal line num =
-  let rec _equal l n =
-    match l,n with
-      _, [] -> true
-      | [], _ -> false
-      | e::q, a::b -> if e == a then _equal q b else false
-  in _equal line num
-;;
+let solve f =
+    let rec _solve part1 part2 =
+        match input_line f with
+        line -> _solve (part1 + get_number line is_digit) (part2 + get_number line is_digit_with_str)
+        | exception End_of_file -> (part1, part2)
+    in _solve 0 0
 
-let get_number_part2 line list_num =
-  let rec get_digit l num i order =
-    match l with
-      e::q -> let n = (is_digit e) in
-              if n >= 0
-                then n
-              else
-                (match num with
-                  a::b -> if order == 0 && is_equal l a
-                            then i+1
-                          else if order == 1 && is_equal l (List.rev a)
-                            then i+1
-                          else (get_digit l b (i + 1) order)
-                  | _ -> get_digit q list_num 0 order)
-      | _ -> -1
-  in let f1 = get_digit line list_num 0 0 in
-  let f2 = get_digit (List.rev line) list_num 0 1 in
-  f1 * 10 + f2
-;;
-
-let part2 all_lines =
-  let rec compute line result =
-    match line with
-      e::q -> compute q (result + get_number_part2 e list_of_num)
-      | [] -> result
-  in let res = compute all_lines 0 in
-  print_string "part2: ";
-  print_int res;
-  print_endline ""
-;;
-
-
-let file = "input";;
-let in_fd = open_in file;;
-let all_lines = get_lines in_fd;;
 let () =
-  (* print_all_lines all_lines; *)
-  part1 all_lines;
-  part2 all_lines;
-  close_in in_fd
-;;
+    let f = open_in file in
+    let res = solve f in
+    close_in f;
+    print_endline (Format.sprintf "part1: %d" (fst res));
+    print_endline (Format.sprintf "part2: %d" (snd res))
