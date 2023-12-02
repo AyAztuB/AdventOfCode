@@ -38,15 +38,13 @@ let get_color str i =
     in let _color = _witch colors 0 in
     (i4 + colors_len.(_color)), nb, _color
 
-let max_authorised = [| 12; 13; 14 |]
-
 let possible str =
     let max_per_colors = [| 0; 0; 0 |] in
     let i, id = game_id str in
     let rec _one_chunk k =
         let index, nb, color = get_color str k in
             (if nb > max_per_colors.(color) then max_per_colors.(color) <- nb);
-            (index, nb <= max_authorised.(color))
+            (index, nb <= (12 +color))
     in let rec _all k isposs =
         if k >= ((String.length str) - 2) then isposs
         else let _i, _poss = _one_chunk k in
