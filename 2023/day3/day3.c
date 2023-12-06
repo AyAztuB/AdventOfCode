@@ -6,6 +6,21 @@
 
 #define BUFFER_SIZE 1000000
 
+static inline int is_digit(char c)
+{
+    return c >= '0' && c <= '9';
+}
+
+static inline int is_dot(char c)
+{
+    return c == '.';
+}
+
+static inline int is_sym(char c)
+{
+    return !is_digit(c) && !is_dot(c);
+}
+
 static int get_line_len(char buffer[static 1])
 {
     int len = 0;
@@ -35,7 +50,7 @@ static int has_sym_range(char line[static 1], int start, int end, int max_line)
     while (start < 0) start++;
     while (end >= max_line) end--;
     for (int i = start; i <= end; i++)
-        if ((line[i] > '9' || line[i] < '0') && line[i] != '.')
+        if (is_sym(line[i]))
             return 1;
     return 0;
 }
@@ -45,7 +60,7 @@ static int get_number(char buffer[static 1], struct position p, struct position 
     int num = atoi(get_index(buffer, p, max));
     int last = p.y;
     char* curr;
-    while ((curr = get_index(buffer, (struct position){ .x = p.x, .y = last }, max)) != NULL && *curr >= '0' && *curr <= '9')
+    while ((curr = get_index(buffer, (struct position){ .x = p.x, .y = last }, max)) != NULL && is_digit(*curr))
         last++;
     *start = last-1;
     if (p.x > 0 && has_sym_range(&buffer[(p.x - 1) * (max.y + 1)], p.y-1, last, max.y))
@@ -53,19 +68,19 @@ static int get_number(char buffer[static 1], struct position p, struct position 
     if (p.x < max.x-1 && has_sym_range(&buffer[(p.x+1) * (max.y+1)], p.y-1, last, max.y))
         return num;
     if (p.y > 0 && (curr = get_index(buffer, (struct position){ .x = p.x, .y = p.y-1 }, max)) != NULL
-        && (*curr > '9' || *curr < '0') && *curr != '.')
+        && is_sym(*curr))
         return num;
     if (p.y < max.y-1 && (curr = get_index(buffer, (struct position){ .x = p.x, .y = last }, max)) != NULL
-        && (*curr > '9' || *curr < '0') && *curr != '.')
+        && is_sym(*curr))
         return num;
     return 0;
 }
 
 static int read_num(char line[static 1], int* start, int max_line)
 {
-    while (*start > 0 && line[*start -1] >= '0' && line[*start -1] <= '9') *start-=1;
+    while (*start > 0 && is_digit(line[*start -1])) *start-=1;
     int num = atoi(line + *start);
-    while (*start < max_line && line[*start] >= '0' && line[*start] <= '9') *start += 1;
+    while (*start < max_line && is_digit(line[*start])) *start += 1;
     *start -= 1;
     return num;
 }
@@ -77,7 +92,7 @@ static int check_gear_range(char line[static 1], int start, int last, int max_li
     int local_res = 1;
     for (int i = start; i <= last; i++)
     {
-        if (line[i] >= '0' && line[i] <= '9')
+        if (is_digit(line[i]))
         {
             local_res *= read_num(line, &i, max_line);
             *nb_num += 1;
@@ -109,7 +124,7 @@ static void solve(char buffer[static 1])
         for (int j = 0; j < line_len; j++)
         {
             char curr = *get_index(buffer, (struct position){ .x = i, .y = j }, max);
-            if (curr >= '0' && curr <= '9')
+            if (is_digit(curr))
                 part1 += get_number(buffer, (struct position){ .x = i, .y = j }, max, &j);
             else if (curr == '*')
                 part2 += get_gear(buffer, (struct position){ .x = i, .y = j }, max);
