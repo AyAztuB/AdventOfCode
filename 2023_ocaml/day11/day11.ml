@@ -4,84 +4,70 @@ let (~++) x = x+1
 let (~--) x = x-1
 let (>>>) x y = if x > y then x else y
 let (<<<) x y = if x < y then x else y
-
-let get_galaxies line x galaxies =
-    let rec _get i out =
-        if i >= String.length line then out else
-        _get ~++i (if line.[i] = '#' then (x, i)::out else out)
-    in _get 0 galaxies
+let (?-) x = if x >= 0 then x else -x
 
 let get_input f =
-    let rec _get_line out i empty_rows galaxies =
+    let rec _get_line out =
         match input_line f with
         line ->
-            _get_line (line :: out) ~++i
-                (if String.for_all
-                    (fun ch -> ch = '.')
-                    line
-                then (i :: empty_rows)
-                else empty_rows)
-                (get_galaxies line i galaxies)
+            _get_line (line :: out)
         | exception End_of_file ->
-            (List.rev out |> Array.of_list,
-            List.sort compare empty_rows,
-            galaxies)
-    in _get_line [] 0 [] []
+            List.rev out |> Array.of_list
+    in _get_line []
 
-let get_empty_cols input =
-    let rec _empty i out =
-        if i >= String.length input.(0) then List.sort compare out else
-        _empty ~++i
-            (if Array.for_all
-                (fun str -> str.[i] = '.')
-                input
-            then (i :: out)
-            else out)
-    in _empty 0 []
+let construct_psa input len scale is_empty_fun =
+    let psa = ref (Array.make (len + 1) 0) in
+    let rec _iter i =
+        if i >= len then !psa else
+        (!psa.(i) <- (!psa.(i - 1) + (if is_empty_fun input i then scale else 1));
+        _iter ~++i)
+    in _iter 1
 
-let find_interval p1 p2 empty =
-    let start = p1 <<< p2 and last = p1 >>> p2 in
-    let rec _find s list i =
-        match list with
-        | e::q ->
-            if e > last then i - s else
-            if e <= start then _find ~++s q ~++i else
-            _find s q ~++i
-        | _ -> i - s
-    in _find 0 empty 0
+let is_row_empty input i =
+    String.for_all (fun ch -> ch = '.') input.(i)
 
-let distance_two_galaxies x1 x2 empty_cols empty_rows expand_ratio =
-    if x1 = x2 then 0 else
-    let nb_empty_row = find_interval (fst x1) (fst x2) empty_rows
-    and nb_empty_col = find_interval (snd x1) (snd x2) empty_cols in
-    let dx = abs((fst x1) - (fst x2))
-    and dy = abs((snd x1) - (snd x2)) in
-    dx + dy + (expand_ratio - 1) * (nb_empty_row + nb_empty_col)
+let is_col_empty input i =
+    Array.for_all (fun s -> s.[i] = '.') input
 
-let for_all_galaxies empty_rows empty_cols expend_ratio galaxies =
-    let rec _one_couple g c out =
+let count_galaxies input len fold_left_fun =
+    let rec _get i out =
+        if i >= len then out else
+        (
+            let c = fold_left_fun input i in
+            if c > 0 then _get ~++i ((i, c)::out) else
+            _get ~++i out
+        )
+    in _get 0 []
+
+let fold_left_row input i =
+    String.fold_left (fun acc ch -> if ch = '#' then acc + 1 else acc) 0 input.(i)
+
+let fold_left_col input i =
+    Array.fold_left (fun acc s -> if s.[i] = '#' then acc + 1 else acc) 0 input
+
+let compute galaxies psa =
+    let rec _aux g nb_seen _sum res =
         match g with
-        | e::q ->
-            _one_couple q c (out +
-                distance_two_galaxies e c
-                    empty_cols empty_rows expend_ratio)
-        | _ -> out
-    in
-    let rec _for_all g out =
-        match g with
-        | e::q -> _for_all q (_one_couple q e out)
-        | _ -> out
-    in _for_all galaxies 0
+        | (idx, count)::q ->
+            _aux q (nb_seen + count) (_sum + psa.(idx) * count)
+                (res + (nb_seen * psa.(idx) - _sum) * count)
+        | _ -> res
+    in _aux galaxies 0 0 0
 
-let solve f =
-    let input, empty_rows, galaxies = get_input f in
-    let empty_cols = get_empty_cols input in
-    (for_all_galaxies empty_rows empty_cols 2 galaxies),
-    (for_all_galaxies empty_rows empty_cols 1000000 galaxies)
+let solve input scale galaxies =
+    let row_psa = construct_psa input (Array.length input) scale is_row_empty
+    and col_psa = construct_psa input (String.length input.(0)) scale is_col_empty
+    and g_rows, g_cols = galaxies in
+    (* because galaxies are in the inverse order, the result will be negative... *)
+    ?-((compute g_rows row_psa) + (compute g_cols col_psa))
 
 let () =
     let f = open_in file in
-    let res = solve f in
+    let input= get_input f in
     close_in f;
-    "part1: " ^ (fst res |> string_of_int) ^ "\npart2: " ^ (snd res |> string_of_int)
+    let galaxies_rows = count_galaxies input (Array.length input) fold_left_row
+    and galaxies_cols = count_galaxies input (String.length input.(0)) fold_left_col in
+    let part1 = solve input 2 (galaxies_rows, galaxies_cols)
+    and part2 = solve input 1000000 (galaxies_rows, galaxies_cols) in
+    "part1: " ^ (part1 |> string_of_int) ^ "\npart2: " ^ (part2 |> string_of_int)
     |> print_endline
